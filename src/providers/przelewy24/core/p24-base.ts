@@ -18,6 +18,7 @@ import {
 } from "../types";
 
 import { P24ApiService } from "../services/p24-api";
+import { getSmallestUnit } from "../../../utils/get-smallest-unit";
 
 import {
   InitiatePaymentInput,
@@ -142,9 +143,15 @@ abstract class P24Base extends AbstractPaymentProvider<P24Options> {
           ? data.return_url
           : `${this.options_.frontend_url}/payment/return?cart_id=${data?.cart_id ?? ""}`;
 
+      // P24 API expects amount in smallest unit (grosze for PLN); Medusa passes major unit
+      const amountInSmallestUnit = getSmallestUnit(
+        Number(amount),
+        currency_code.toUpperCase(),
+      );
+
       const transactionRequest: P24Transaction = {
         sessionId: context?.idempotency_key as string,
-        amount: Number(amount),
+        amount: amountInSmallestUnit,
         country: country,
         language: language,
         currency: currency_code.toUpperCase(),

@@ -145,9 +145,19 @@ export class P24ApiService {
     });
 
     if (!response.ok) {
-      throw new Error(
-        `P24 API request failed: ${response.status} ${response.statusText}`
-      );
+      const errBody = await response.text();
+      let errMsg = `P24 API request failed: ${response.status} ${response.statusText}`;
+      try {
+        const parsed = JSON.parse(errBody) as Record<string, unknown>;
+        if (parsed.error ?? parsed.message ?? parsed.errors) {
+          errMsg += ` - ${JSON.stringify(parsed)}`;
+        } else if (errBody) {
+          errMsg += ` - ${errBody}`;
+        }
+      } catch {
+        if (errBody) errMsg += ` - ${errBody}`;
+      }
+      throw new Error(errMsg);
     }
 
     return response.json();
